@@ -10,19 +10,53 @@ import android.util.Log;
 import android.view.Gravity;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.view.View;
+import android.widget.ImageButton;
 import android.widget.Toast;
 
 public class MainActivity extends Activity implements SurfaceHolder.Callback {
     SurfaceHolder holder;
     SurfaceView view;
     Camera camera;
+    ImageButton change;
+    ImageButton toggle;
+    ImageButton capture;
+    boolean front = false;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        change = (ImageButton) (findViewById(R.id.change));
+        toggle = (ImageButton) (findViewById(R.id.flashToggle));
+        capture = (ImageButton) (findViewById(R.id.capture));
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
         }
+        else {
+            start();
+        }
+        change.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                try {
+                    camera.stopPreview();
+                    camera.release();
+                    if (front) {
+                        camera = camera.open(Camera.CameraInfo.CAMERA_FACING_BACK);
+                    }
+                    else {
+                        camera = camera.open(Camera.CameraInfo.CAMERA_FACING_FRONT);
+                    }
+                } catch(Exception e) {Log.d("debugging mainActivity", e.getMessage());}
+                try {
+                    camera.setDisplayOrientation(90);
+                    camera.setPreviewDisplay(holder);
+                } catch(Exception e) {Log.d("dubugging mainActivity", e.getMessage());}
+                front = !front;
+                camera.startPreview();
+            }
+        });
     }
 
     public void start() {
