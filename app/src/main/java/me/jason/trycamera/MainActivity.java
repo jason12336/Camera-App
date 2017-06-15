@@ -22,6 +22,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     ImageButton toggle;
     ImageButton capture;
     boolean front = false;
+    boolean flash = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,6 +56,23 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
                 } catch(Exception e) {Log.d("dubugging mainActivity", e.getMessage());}
                 front = !front;
                 camera.startPreview();
+            }
+        });
+
+        toggle.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Camera.Parameters p = camera.getParameters();
+                if (flash) {
+                    p.setFlashMode(Camera.Parameters.FLASH_MODE_OFF);
+                    toggle.setImageResource(R.drawable.flash_off);
+                }
+                else {
+                    p.setFlashMode(Camera.Parameters.FLASH_MODE_TORCH);
+                    toggle.setImageResource(R.drawable.flash);
+                }
+                flash = !flash;
+                camera.setParameters(p);
             }
         });
     }
