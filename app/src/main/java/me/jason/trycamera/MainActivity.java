@@ -2,8 +2,11 @@ package me.jason.trycamera;
 
 import android.Manifest;
 import android.app.Activity;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.hardware.Camera;
+import android.net.Uri;
+import android.os.Environment;
 import android.support.v4.app.ActivityCompat;
 import android.os.Bundle;
 import android.util.Log;
@@ -14,6 +17,15 @@ import android.view.View;
 import android.widget.ImageButton;
 import android.widget.Toast;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
+import static me.jason.trycamera.R.id.bottom;
+
 public class MainActivity extends Activity implements SurfaceHolder.Callback {
     SurfaceHolder holder;
     SurfaceView view;
@@ -21,6 +33,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     ImageButton change;
     ImageButton toggle;
     ImageButton capture;
+    File outputPictureFile;
     boolean front = false;
     boolean flash = false;
 
@@ -31,6 +44,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         change = (ImageButton) (findViewById(R.id.change));
         toggle = (ImageButton) (findViewById(R.id.flashToggle));
         capture = (ImageButton) (findViewById(R.id.capture));
+        File outputPictureFile = null;
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
         }
@@ -73,6 +87,55 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
                 }
                 flash = !flash;
                 camera.setParameters(p);
+            }
+        });
+
+        capture.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Toast.makeText(MainActivity.this, "button clicked!", Toast.LENGTH_SHORT).show();
+                captureImage();
+            }
+        });
+    }
+
+    public void refreshCamera () {
+        if (holder.getSurface() == null) {
+            return;
+        }
+        try {
+            camera.stopPreview();
+        } catch (Exception e) {}
+        try {
+            camera.setPreviewDisplay(holder);
+             camera.startPreview();
+        } catch (Exception e) {}
+    }
+
+    private File getDir() {
+        File file = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM);
+        return new File(file,  "Camera_Demo");
+    }
+    public void captureImage() {
+        camera.takePicture(null, null, new Camera.PictureCallback() {
+            File directory = getDir();
+            // @Override
+            @Override
+            public void onPictureTaken(byte[] data, Camera camera) {
+                try {
+                    FileOutputStream outStream = new FileOutputStream(
+                            directory.getAbsoluteFile().toString() + "/"
+                                    + System.currentTimeMillis() + ".jpg");
+                    outStream.write(data);
+                    outStream.close();
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } finally {
+                    refreshCamera();
+                }
+                Log.d("debugging mainActivity", "onPictureTaken - jpeg");
             }
         });
     }
@@ -118,6 +181,9 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
 
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
-
+        try {
+            camera.stopPreview();
+            camera.release();
+        } catch (Exception e) {}
     }
 }
